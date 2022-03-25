@@ -4,7 +4,8 @@
   "description": "Atividade nodejs full api",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "nodemon": "nodemon server.js"
   },
   "author": "Yago Nunes",
   "license": "ISC",
@@ -16,6 +17,7 @@
     "heroku": "^7.60.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^1.0.4",
+    "nodemon": "^2.0.15",
     "pg": "^8.7.3"
   }
 }
