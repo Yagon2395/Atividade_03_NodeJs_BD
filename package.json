@@ -4,7 +4,7 @@
   "description": "Atividade nodejs full api",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "node server.js"
   },
   "author": "Yago Nunes",
   "license": "ISC",
