@@ -1,66 +1,131 @@
-const express = require ('express')
+const express = require('express')
 const routerAPI = express.Router()
 
-const lista_produtos = {
-    produtos: [
-        { id: 1, descricao: "Arroz parboilizado 5Kg", valor: 25.00, marca: "Tio João"  },
-        { id: 2, descricao: "Maionese 250gr", valor: 7.20, marca: "Helmans"  },
-        { id: 3, descricao: "Iogurte Natural 200ml", valor: 2.50, marca: "Itambé"  },
-        { id: 4, descricao: "Batata Maior Palha 300gr", valor: 15.20, marca: "Chipps"  },
-        { id: 5, descricao: "Nescau 400gr", valor: 8.00, marca: "Nestlé"  },
-    ]
-}
 
-const knex = require('knex')({ 
-    client: 'pg', 
-    debug: true, 
-    connection: { 
-        connectionString : process.env.DATABASE_URL, 
-        ssl: { rejectUnauthorized: false }, 
-      } 
+routerAPI.use(express.urlencoded({ extended: true })) // processar o body
+routerAPI.use(express.json()) // processa o body em formato json
+
+const knex = require('knex')({
+    client: 'pg',
+    debug: true,
+    connection: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+    }
 });
 
-routerAPI.get ('/produtos', (req, res, next) => {
+// Obter a lista de produtos 
+routerAPI.get('/produtos', (req, res, next) => {
     //res.json(lista_produtos)
-    knex.select('*').from('produto') 
-    .then( produtos => res.status(200).json(produtos) ) 
-    .catch(err => { 
-        res.status(500).json({  
-           message: 'Erro ao recuperar produtos - ' + err.message }) 
-    })   
+    knex.select('*').from('produto')
+        .then(data => res.status(200).json(data))
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao recuperar produtos - ' + err.message
+            })
+        })
 })
 
-routerAPI.get ('/produtos/:id', (req, res, next) => {
-    let id = parseInt (req.params.id)
-    let idx = lista_produtos.produtos.findIndex (elem => elem.id === id)
+// Obter um produto específico 
+routerAPI.get('/produtos/:id', (req, res, next) => {
+    let id = parseInt(req.params.id)
 
-    if (idx != -1) {
-        res.status(200).json(lista_produtos.produtos[idx])
+    knex.select('*')
+        .where({ id: id })
+        .table('produto')
+        .first()
+        .then(data => {
+            if (data != null) {
+                res.status(200).json(data)
+            } else {
+                res.status(404).json({
+                    message: 'Produto não encontrado'
+                })
+            }
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao buscar o produto de id: ' + id + ' - ' + err.message
+            })
+        })
+})
+
+// Incluir um produto 
+routerAPI.post('/produtos', (req, res, next) => {
+    console.log(req.body)
+    if (Object.keys(req.body).length === 0) {
+        res.status(400).json({ message: 'Produto deve ser passado no corpo da requisição para o cadastro' })
+    } else {
+        knex.insert(req.body)
+            .returning('id')
+            .into('produto')
+            .then(data => {
+                res.status(200).json({
+                    message: 'Produto inserido com sucesso',
+                    id: data
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: 'Erro ao inserir o produto - ' + err.message
+                })
+            })
     }
-    else {
-        res.status(404).json({ message: 'Produto não encontrado' })
-    }    
 })
 
-routerAPI.post ('/produtos', (req, res, next) => {
-    res.json({ message: 'Recurso não implementado' })
-})
-
-routerAPI.put ('/produtos/:id', (req, res, next) => {
-    res.json({ message: 'Recurso não implementado' })
-})
-
-routerAPI.delete ('/produtos/:id', (req, res, next) => {
-    let id = parseInt (req.params.id)
-    let idx = lista_produtos.produtos.findIndex (elem => elem.id === id)
-
-    if (idx != -1) {
-        lista_produtos.produtos.splice (idx, 1)
-        res.status(200).json({ message: 'produto excluido' })
+// Alterar um produto
+routerAPI.put('/produtos/:id', (req, res, next) => {
+    console.log(req.body)
+    let id = parseInt(req.params.id)
+    if (Object.keys(req.body).length === 0) {
+        res.status(400).json({ message: 'Produto deve ser passado no corpo da requisição para atualização' })
     }
+    else if (id === 0) {
+        res.status(400).json({ message: 'id deve ser maior que 0' })
+    }  
     else {
-        res.status(404).json({ message: 'Produto não encontrado' })
-    } 
+        knex.where({id: id})
+            .update({descricao: req.body.descricao, valor: req.body.valor, marca: req.body.marca})
+            .table('produto')
+            .then(data => {
+                console.log(data)
+                res.status(!!data?200:404).json({
+                    message: !!data?'Produto atualizado com sucesso' : 'Produto não encontrado',
+                    updatedRows: data
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: 'Erro ao atualizar o produto - ' + err.message
+                })
+            })
+    }
+})
+
+// Excluir um produto 
+routerAPI.delete('/produtos/:id', (req, res, next) => {
+    console.log(req.body)
+    let id = parseInt(req.params.id)
+    if (id === 0) {
+        res.status(400).json({ message: 'id deve ser maior que 0' })
+    }  
+    else {
+        knex.where({id: id})
+            .delete()
+            .table('produto')
+            .then(data => {
+                console.log(data)
+                res.status(!!data?200:404).json({
+                    message: !!data?'Produto excluído com sucesso' : 'Produto não encontrado',
+                    updatedRows: data
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: 'Erro ao excluir o produto - ' + err.message
+                })
+            })
+    }
 })
 
 module.exports = routerAPI
