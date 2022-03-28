@@ -5,8 +5,10 @@ const cors = require('cors');
 const path  = require ('path') 
 const app = express () 
 const apiRouter = require('./api/routes/apiRouter') 
+const secRouter = require('./api/routes/secRouter') 
  
 app.use ('/api', apiRouter) 
+app.use ('/seguranca', secRouter) 
 app.use(cors()) 
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true })); 
