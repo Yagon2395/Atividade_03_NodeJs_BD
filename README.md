@@ -1,3 +1,6 @@
-# Atividade_03_NodeJs_BD
+# Node.js start project
 
-Full API NodeJS (CRUD + DB + JWT)
+An start project of Node.js API with CRUD operations, Database access and JWT security.
+
+### License
+MIT
